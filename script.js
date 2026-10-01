@@ -148,6 +148,13 @@ document.addEventListener('DOMContentLoaded', () => {
     gameBoard.setAttribute('aria-label', 'Игровое поле');
     startNewGame(gameBoard);
     main.append(gameCounters, gameBoard);
+    gameBoard.addEventListener('click', (event) => {
+        const cardButton = event.target.closest('.memory-card');
+        if (!cardButton) return;
+        const cardId = Number(cardButton.dataset.id);
+        handleCardClick(cardId);
+        console.log('click');
+    });
 
 
     const dialog = document.createElement('dialog');
@@ -270,3 +277,80 @@ function shuffle(array) {
     }
     return arr;
 }
+
+function handleCardClick(cardId) {
+    const card = state.cards.find(c => c.uniqueId === cardId);
+
+    if (state.isLocked || !card || card.isFlipped || card.isMatched) {
+        return;
+    }
+    card.isFlipped = true;
+
+    const cardElement = document.querySelector(`[data-id="${cardId}"]`);
+
+    if (cardElement) {
+        cardElement.classList.add('is-flipped');
+        cardElement.dataset.state = 'flipped';
+    }
+
+    state.flippedCards.push(card);
+    if (state.flippedCards.length === 1) {
+        return;
+    }
+
+    if (state.flippedCards.length === 2) {
+        checkPairMatch();
+    }
+}
+
+function checkPairMatch() {
+    state.moves++;
+    const movesOutput = document.getElementById('moves-count');
+    if (movesOutput) movesOutput.textContent = String(state.moves);
+
+    const [card1, card2] = state.flippedCards;
+
+    const el1 = document.querySelector(`[data-id="${card1.uniqueId}"]`);
+    const el2 = document.querySelector(`[data-id="${card2.uniqueId}"]`);
+
+    if (card1.id === card2.id) {
+        card1.isMatched = true;
+        card2.isMatched = true;
+
+        if (el1) {
+            el1.classList.add('is-matched');
+            el1.dataset.state = 'matched';
+        }
+        if (el2) {
+            el2.classList.add('is-matched');
+            el2.dataset.state = 'matched';
+        }
+
+        state.flippedCards = [];
+
+        checkGameWin();
+    } else {
+
+        state.isLocked = true;
+
+        setTimeout(() => {
+            card1.isFlipped = false;
+            card2.isFlipped = false;
+
+            if (el1) {
+                el1.classList.remove('is-flipped');
+                el1.dataset.state = 'closed';
+            }
+            if (el2) {
+                el2.classList.remove('is-flipped');
+                el2.dataset.state = 'closed';
+            }
+
+            state.flippedCards = [];
+            state.isLocked = false;
+        }, 1000);
+    }
+}
+
+function checkGameWin() { };
+
