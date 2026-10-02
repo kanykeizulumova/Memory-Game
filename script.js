@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
     newGameHeaderBtn.id = 'new-game-header-btn';
     newGameHeaderBtn.textContent = 'Новая игра';
     newGameHeaderBtn.addEventListener('click', () => {
-        dialog.close();
+        victoryDialog.close();
         document.getElementById('moves-count').textContent = ' 0';
         document.getElementById('pairs-count').textContent = '0 из 8';
         startNewGame(gameBoard);
@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
     leaderboardHeaderBtn.className = 'leader-board'
     leaderboardHeaderBtn.textContent = 'Таблица лидеров';
     leaderboardHeaderBtn.addEventListener('click', () => {
-        modal.showModal();
+        leaderboardDialog.showModal();
     });
 
     headerActions.append(newGameHeaderBtn, leaderboardHeaderBtn);
@@ -165,84 +165,16 @@ document.addEventListener('DOMContentLoaded', () => {
         handleCardClick(cardId);
     });
 
+    function createModal(modalId, contentElement) {
+        const dialog = document.createElement('dialog');
+        dialog.id = modalId;
+        dialog.className = 'app-modal';
 
-    const dialog = document.createElement('dialog');
-    dialog.id = 'victory-modal';
-    dialog.setAttribute('aria-labelledby', 'victory-title');
+        const modalContent = document.createElement('div');
+        modalContent.className = 'modal-content';
 
-    const victoryModalContent = document.createElement('div');
-    victoryModalContent.className = 'modal-content';
-
-    const victoryTitle = document.createElement('h2');
-    victoryTitle.id = 'victory-title';
-    victoryTitle.textContent = 'Поздравляем! Вы победили!';
-
-    const victoryResult = document.createElement('p');
-    victoryResult.className = 'victory-result';
-    victoryResult.textContent = 'Игра завершена за ';
-
-    const finalMovesCount = document.createElement('strong');
-    finalMovesCount.id = 'final-moves-count';
-    finalMovesCount.textContent = '0';
-
-    victoryResult.appendChild(finalMovesCount);
-    victoryResult.appendChild(document.createTextNode(' ходов.'));
-
-    const modalActions = document.createElement('div');
-    modalActions.className = 'modal-actions';
-
-    const modalNewGameBtn = document.createElement('button');
-    modalNewGameBtn.type = 'button';
-    modalNewGameBtn.id = 'modal-new-game-btn';
-    modalNewGameBtn.className = 'new-game-modal';
-    modalNewGameBtn.textContent = 'Новая игра';
-    modalNewGameBtn.addEventListener('click', () => {
-        dialog.close();
-        document.getElementById('moves-count').textContent = ' 0';
-        document.getElementById('pairs-count').textContent = '0 из 8';
-        startNewGame(gameBoard);
-    });
-
-    const modalCloseBtn = document.createElement('button');
-    modalCloseBtn.type = 'button';
-    modalCloseBtn.id = 'modal-close-btn';
-    modalCloseBtn.textContent = 'Закрыть';
-    modalCloseBtn.addEventListener('click', () => {
-        dialog.close();
-    });
-
-    const modal = document.createElement('dialog');
-    modal.id = 'leaderboardModal';
-
-    const leaderboardModalContent = document.createElement('div');
-    leaderboardModalContent.className = 'modal-content';
-
-    const title = document.createElement('h2');
-    title.textContent = 'Таблица лидеров';
-
-    const container = document.createElement('div');
-    container.id = 'leaderboardContainer';
-    container.textContent = ''
-
-    const closeBtn = document.createElement('button');
-    closeBtn.className = 'close-modal-btn';
-    closeBtn.textContent = 'Закрыть';
-
-    leaderboardModalContent.appendChild(title);
-    leaderboardModalContent.appendChild(container);
-    leaderboardModalContent.appendChild(closeBtn);
-    modal.appendChild(leaderboardModalContent);
-
-    closeBtn.addEventListener('click', () => {
-        modal.close();
-    });
-
-    modalActions.append(modalNewGameBtn, modalCloseBtn);
-    victoryModalContent.append(victoryTitle, victoryResult, modalActions);
-    dialog.appendChild(victoryModalContent);
-
-    function enableClickOutsideClose(dialog) {
-        if (!dialog) return;
+        modalContent.append(contentElement);
+        dialog.append(modalContent);
 
         dialog.addEventListener('click', (event) => {
             const rect = dialog.getBoundingClientRect();
@@ -252,19 +184,90 @@ document.addEventListener('DOMContentLoaded', () => {
                 rect.left <= event.clientX &&
                 event.clientX <= rect.left + rect.width
             );
-
             if (!isInDialog) {
                 dialog.close();
             }
         });
+
+        return dialog;
     }
 
-    enableClickOutsideClose(dialog);
-    enableClickOutsideClose(modal);
+    function buildVictoryContent(onNewGame, onClose) {
+        const fragment = document.createDocumentFragment();
 
+        const title = document.createElement('h2');
+        title.id = 'victory-title';
+        title.textContent = 'Поздравляем! Вы победили!';
 
+        const result = document.createElement('p');
+        result.className = 'victory-result';
+        result.textContent = 'Игра завершена за ';
 
-    document.body.append(header, main, dialog, modal);
+        const movesCount = document.createElement('strong');
+        movesCount.id = 'final-moves-count';
+        movesCount.textContent = '0';
+
+        result.append(movesCount, document.createTextNode(' ходов.'));
+
+        const actions = document.createElement('div');
+        actions.className = 'modal-actions';
+
+        const newGameBtn = document.createElement('button');
+        newGameBtn.type = 'button';
+        newGameBtn.id = 'modal-new-game-btn';
+        newGameBtn.className = 'new-game-modal';
+        newGameBtn.textContent = 'Новая игра';
+        newGameBtn.addEventListener('click', onNewGame);
+
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.id = 'modal-close-btn';
+        closeBtn.className = 'close-modal-btn';
+        closeBtn.textContent = 'Закрыть';
+        closeBtn.addEventListener('click', onClose);
+
+        actions.append(newGameBtn, closeBtn);
+        fragment.append(title, result, actions);
+
+        return fragment;
+    }
+
+    function buildLeaderboardContent(onClose) {
+        const fragment = document.createDocumentFragment();
+
+        const title = document.createElement('h2');
+        title.textContent = 'Таблица лидеров';
+
+        const container = document.createElement('div');
+        container.id = 'leaderboardContainer';
+
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'close-modal-btn';
+        closeBtn.textContent = 'Закрыть';
+        closeBtn.addEventListener('click', onClose);
+
+        fragment.append(title, container, closeBtn);
+
+        return fragment;
+    }
+
+    const victoryDialog = createModal('victory-modal', buildVictoryContent(
+        () => {
+            victoryDialog.close();
+            document.getElementById('moves-count').textContent = ' 0';
+            document.getElementById('pairs-count').textContent = '0 из 8';
+            startNewGame(gameBoard);
+        },
+        () => victoryDialog.close()
+    ));
+    victoryDialog.setAttribute('aria-labelledby', 'victory-title');
+
+    const leaderboardDialog = createModal('leaderboardModal', buildLeaderboardContent(
+        () => leaderboardDialog.close()
+    ));
+
+    document.body.append(header, main, victoryDialog, leaderboardDialog);
 });
 
 
