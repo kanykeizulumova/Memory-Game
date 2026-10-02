@@ -102,6 +102,12 @@ document.addEventListener('DOMContentLoaded', () => {
     newGameHeaderBtn.type = 'button';
     newGameHeaderBtn.id = 'new-game-header-btn';
     newGameHeaderBtn.textContent = 'Новая игра';
+    newGameHeaderBtn.addEventListener('click', () => {
+        dialog.close();
+        document.getElementById('moves-count').textContent = ' 0';
+        startNewGame(gameBoard);
+    });
+
 
     const leaderboardHeaderBtn = document.createElement('button');
     leaderboardHeaderBtn.type = 'button';
@@ -124,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
     counterItemMoves.className = 'counter-item';
     const counterLabelMoves = document.createElement('span');
     counterLabelMoves.className = 'counter-label';
-    counterLabelMoves.textContent = 'Ходов:';
+    counterLabelMoves.textContent = 'Ходов: ';
     const movesCountOutput = document.createElement('output');
     movesCountOutput.id = 'moves-count';
     movesCountOutput.textContent = '0';
@@ -134,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
     counterItemPairs.className = 'counter-item';
     const counterLabelPairs = document.createElement('span');
     counterLabelPairs.className = 'counter-label';
-    counterLabelPairs.textContent = 'Найдено пар:';
+    counterLabelPairs.textContent = 'Найдено пар: ';
     const pairsCountOutput = document.createElement('output');
     pairsCountOutput.id = 'pairs-count';
     pairsCountOutput.textContent = '0 из 8';
@@ -153,7 +159,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!cardButton) return;
         const cardId = Number(cardButton.dataset.id);
         handleCardClick(cardId);
-        console.log('click');
     });
 
 
@@ -187,11 +192,19 @@ document.addEventListener('DOMContentLoaded', () => {
     modalNewGameBtn.id = 'modal-new-game-btn';
     modalNewGameBtn.className = 'new-game-modal';
     modalNewGameBtn.textContent = 'Новая игра';
+    modalNewGameBtn.addEventListener('click', () => {
+        dialog.close();
+        document.getElementById('moves-count').textContent = '0';
+        startNewGame(gameBoard);
+    });
 
     const modalCloseBtn = document.createElement('button');
     modalCloseBtn.type = 'button';
     modalCloseBtn.id = 'modal-close-btn';
     modalCloseBtn.textContent = 'Закрыть';
+    modalNewGameBtn.addEventListener('click', () => {
+        dialog.close();
+    });
 
     modalActions.append(modalNewGameBtn, modalCloseBtn);
     modalContent.append(victoryTitle, victoryResult, modalActions);
@@ -306,6 +319,7 @@ function handleCardClick(cardId) {
 function checkPairMatch() {
     state.moves++;
     const movesOutput = document.getElementById('moves-count');
+    const pairsOutput = document.getElementById('pairs-count');
     if (movesOutput) movesOutput.textContent = String(state.moves);
 
     const [card1, card2] = state.flippedCards;
@@ -316,6 +330,7 @@ function checkPairMatch() {
     if (card1.id === card2.id) {
         card1.isMatched = true;
         card2.isMatched = true;
+        pairsOutput.textContent = `${(state.cards.filter(card => card.isMatched).length) / 2} из ${state.cards.length / 2}`;
 
         if (el1) {
             el1.classList.add('is-matched');
@@ -352,5 +367,19 @@ function checkPairMatch() {
     }
 }
 
-function checkGameWin() { };
+function checkGameWin() {
+    const matchedCount = state.cards.filter(card => card.isMatched).length;
+    const totalPairs = state.cards.length;
+    const dialog = document.getElementById('victory-modal');
+
+    if (matchedCount === totalPairs) {
+        state.status = 'won';
+        console.log('You won the game!');
+        setTimeout(() => {
+            dialog.showModal();
+            const finalMovesCount = document.getElementById('final-moves-count');
+            finalMovesCount.textContent = String(state.moves);
+        }, 1000);
+    }
+};
 
