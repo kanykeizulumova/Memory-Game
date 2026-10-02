@@ -78,6 +78,7 @@ const state = {
     cards: [],
     flippedCards: [],
     flipTimeoutId: null,
+    victoryTimeoutId: null,
     isLocked: false,
     moves: 0,
     score: 0,
@@ -92,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
     header.className = 'site-header';
 
     const brandLink = document.createElement('a');
-    brandLink.href = '/';
+    brandLink.href = './';
     brandLink.className = 'brand-title';
     brandLink.textContent = 'Мемори';
 
@@ -104,17 +105,16 @@ document.addEventListener('DOMContentLoaded', () => {
     newGameHeaderBtn.id = 'new-game-header-btn';
     newGameHeaderBtn.textContent = 'Новая игра';
     newGameHeaderBtn.addEventListener('click', () => {
-        victoryDialog.close();
-        document.getElementById('moves-count').textContent = ' 0';
-        document.getElementById('pairs-count').textContent = '0 из 8';
+        if (victoryDialog.open) {
+            victoryDialog.close();
+        }
         startNewGame(gameBoard);
     });
-
 
     const leaderboardHeaderBtn = document.createElement('button');
     leaderboardHeaderBtn.type = 'button';
     leaderboardHeaderBtn.id = 'leaderboard-header-btn';
-    leaderboardHeaderBtn.className = 'leader-board'
+    leaderboardHeaderBtn.className = 'leader-board';
     leaderboardHeaderBtn.textContent = 'Таблица лидеров';
     leaderboardHeaderBtn.addEventListener('click', () => {
         renderLocalStorageData();
@@ -122,63 +122,69 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function renderLocalStorageData() {
-        let savedData = localStorage.getItem('memoryGameScores');
         const container = document.getElementById('leaderboardContainer');
+        if (!container) return;
+        container.textContent = '';
+
+        const savedData = localStorage.getItem('memoryGameScores');
+        let data = [];
         if (savedData) {
             try {
-                const data = JSON.parse(savedData);
-
-                container.textContent = '';
-                const table = document.createElement('table');
-                table.className = 'leaderboard-table';
-                const thead = document.createElement('thead');
-                const headerTr = document.createElement('tr');
-                const movesNm = document.createElement('th');
-                movesNm.textContent = 'Место';
-
-                const movesTh = document.createElement('th');
-                movesTh.textContent = 'Результат';
-
-                const dateTh = document.createElement('th');
-                dateTh.textContent = 'Дата игры';
-                headerTr.appendChild(movesNm);
-                headerTr.appendChild(movesTh);
-                headerTr.appendChild(dateTh);
-                thead.appendChild(headerTr);
-                table.appendChild(thead);
-
-                const tbody = document.createElement('tbody');
-
-                data.forEach((item, index) => {
-                    const tr = document.createElement('tr');
-                    tr.className = 'leaderboard-item';
-
-                    const numberTd = document.createElement('td');
-                    numberTd.textContent = index + 1;
-
-                    const movesTd = document.createElement('td');
-                    movesTd.textContent = `Ходов: ${item.moves}`;
-
-                    const dateTd = document.createElement('td');
-                    dateTd.textContent = item.date;
-
-                    tr.appendChild(numberTd);
-                    tr.appendChild(movesTd);
-                    tr.appendChild(dateTd);
-                    tbody.appendChild(tr);
-                });
-
-                table.appendChild(tbody);
-                container.appendChild(table);
-
+                data = JSON.parse(savedData);
             } catch (error) {
                 console.error("Ошибка чтения или парсинга данных:", error);
+                data = [];
             }
-        } else if (savedData === null) {
-            container.textContent = 'Нет данных для отображения.';
-        } else {
-            container.textContent = 'Нет данных для отображения.';
         }
+
+        if (!Array.isArray(data) || data.length === 0) {
+            const emptyMsg = document.createElement('p');
+            emptyMsg.className = 'leaderboard-empty';
+            emptyMsg.textContent = 'Пока нет результатов';
+            container.appendChild(emptyMsg);
+            return;
+        }
+
+        const table = document.createElement('table');
+        table.className = 'leaderboard-table';
+        const thead = document.createElement('thead');
+        const headerTr = document.createElement('tr');
+
+        const movesNm = document.createElement('th');
+        movesNm.textContent = 'Место';
+
+        const movesTh = document.createElement('th');
+        movesTh.textContent = 'Число ходов';
+
+        const dateTh = document.createElement('th');
+        dateTh.textContent = 'Дата игры';
+
+        headerTr.append(movesNm, movesTh, dateTh);
+        thead.appendChild(headerTr);
+        table.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+
+        data.forEach((item, index) => {
+            const tr = document.createElement('tr');
+            tr.className = 'leaderboard-item';
+
+            const numberTd = document.createElement('td');
+            numberTd.className = 'cell-number';
+            numberTd.textContent = String(index + 1);
+
+            const movesTd = document.createElement('td');
+            movesTd.textContent = String(item.moves);
+
+            const dateTd = document.createElement('td');
+            dateTd.textContent = item.date;
+
+            tr.append(numberTd, movesTd, dateTd);
+            tbody.appendChild(tr);
+        });
+
+        table.appendChild(tbody);
+        container.appendChild(table);
     }
     headerActions.append(newGameHeaderBtn, leaderboardHeaderBtn);
     header.append(brandLink, headerActions);
@@ -238,15 +244,17 @@ document.addEventListener('DOMContentLoaded', () => {
         dialog.append(modalContent);
 
         dialog.addEventListener('click', (event) => {
-            const rect = dialog.getBoundingClientRect();
-            const isInDialog = (
-                rect.top <= event.clientY &&
-                event.clientY <= rect.top + rect.height &&
-                rect.left <= event.clientX &&
-                event.clientX <= rect.left + rect.width
-            );
-            if (!isInDialog) {
-                dialog.close();
+            if (event.target === dialog) {
+                const rect = dialog.getBoundingClientRect();
+                const isInDialog = (
+                    rect.top <= event.clientY &&
+                    event.clientY <= rect.top + rect.height &&
+                    rect.left <= event.clientX &&
+                    event.clientX <= rect.left + rect.width
+                );
+                if (!isInDialog) {
+                    dialog.close();
+                }
             }
         });
 
@@ -266,9 +274,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const movesCount = document.createElement('strong');
         movesCount.id = 'final-moves-count';
-        movesCount.textContent = '0';
+        movesCount.textContent = '0 ходов';
 
-        result.append(movesCount, document.createTextNode(' ходов.'));
+        result.append(movesCount, document.createTextNode('.'));
 
         const actions = document.createElement('div');
         actions.className = 'modal-actions';
@@ -315,9 +323,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const victoryDialog = createModal('victory-modal', buildVictoryContent(
         () => {
-            victoryDialog.close();
-            document.getElementById('moves-count').textContent = ' 0';
-            document.getElementById('pairs-count').textContent = '0 из 8';
+            if (victoryDialog.open) {
+                victoryDialog.close();
+            }
             startNewGame(gameBoard);
         },
         () => victoryDialog.close()
@@ -381,6 +389,10 @@ function startNewGame(gameBoard) {
         clearTimeout(state.flipTimeoutId);
         state.flipTimeoutId = null;
     }
+    if (state.victoryTimeoutId !== null) {
+        clearTimeout(state.victoryTimeoutId);
+        state.victoryTimeoutId = null;
+    }
     if (state.timerId) {
         clearInterval(state.timerId);
         state.timerId = null;
@@ -392,6 +404,11 @@ function startNewGame(gameBoard) {
     state.moves = 0;
     state.status = 'playing';
     state.timer = 0;
+
+    const movesOutput = document.getElementById('moves-count');
+    const pairsOutput = document.getElementById('pairs-count');
+    if (movesOutput) movesOutput.textContent = '0';
+    if (pairsOutput) pairsOutput.textContent = '0 из 8';
 
     renderBoard(gameBoard);
 }
@@ -494,6 +511,15 @@ function checkPairMatch() {
     }
 }
 
+function getPluralMoves(count) {
+    const abs = Math.abs(count) % 100;
+    const num = abs % 10;
+    if (abs > 10 && abs < 20) return `${count} ходов`;
+    if (num > 1 && num < 5) return `${count} хода`;
+    if (num === 1) return `${count} ход`;
+    return `${count} ходов`;
+}
+
 function checkGameWin() {
     const matchedCount = state.cards.filter(card => card.isMatched).length;
     const totalPairs = state.cards.length;
@@ -525,10 +551,16 @@ function checkGameWin() {
         const top10 = scores.slice(0, 10);
         localStorage.setItem('memoryGameScores', JSON.stringify(top10));
         console.log('You won the game!');
-        setTimeout(() => {
-            dialog.showModal();
+        const finalMoves = state.moves;
+
+        state.victoryTimeoutId = setTimeout(() => {
             const finalMovesCount = document.getElementById('final-moves-count');
-            finalMovesCount.textContent = String(state.moves);
+            if (finalMovesCount) {
+                finalMovesCount.textContent = getPluralMoves(finalMoves);
+            }
+            dialog.showModal();
+
+            state.victoryTimeoutId = null;
         }, 1000);
     }
 };
