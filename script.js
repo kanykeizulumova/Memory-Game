@@ -115,6 +115,9 @@ document.addEventListener('DOMContentLoaded', () => {
     leaderboardHeaderBtn.id = 'leaderboard-header-btn';
     leaderboardHeaderBtn.className = 'leader-board'
     leaderboardHeaderBtn.textContent = 'Таблица лидеров';
+    leaderboardHeaderBtn.addEventListener('click', () => {
+        modal.showModal();
+    });
 
     headerActions.append(newGameHeaderBtn, leaderboardHeaderBtn);
     header.append(brandLink, headerActions);
@@ -167,8 +170,8 @@ document.addEventListener('DOMContentLoaded', () => {
     dialog.id = 'victory-modal';
     dialog.setAttribute('aria-labelledby', 'victory-title');
 
-    const modalContent = document.createElement('div');
-    modalContent.className = 'modal-content';
+    const victoryModalContent = document.createElement('div');
+    victoryModalContent.className = 'modal-content';
 
     const victoryTitle = document.createElement('h2');
     victoryTitle.id = 'victory-title';
@@ -207,12 +210,60 @@ document.addEventListener('DOMContentLoaded', () => {
         dialog.close();
     });
 
+    const modal = document.createElement('dialog');
+    modal.id = 'leaderboardModal';
+
+    const leaderboardModalContent = document.createElement('div');
+    leaderboardModalContent.className = 'modal-content';
+
+    const title = document.createElement('h2');
+    title.textContent = 'Таблица лидеров';
+
+    const container = document.createElement('div');
+    container.id = 'leaderboardContainer';
+    container.innerHTML = '';
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'close-modal-btn';
+    closeBtn.textContent = 'Закрыть';
+
+    leaderboardModalContent.appendChild(title);
+    leaderboardModalContent.appendChild(container);
+    leaderboardModalContent.appendChild(closeBtn);
+    modal.appendChild(leaderboardModalContent);
+
+    closeBtn.addEventListener('click', () => {
+        modal.close();
+    });
+
     modalActions.append(modalNewGameBtn, modalCloseBtn);
-    modalContent.append(victoryTitle, victoryResult, modalActions);
-    dialog.appendChild(modalContent);
+    victoryModalContent.append(victoryTitle, victoryResult, modalActions);
+    dialog.appendChild(victoryModalContent);
+
+    function enableClickOutsideClose(dialog) {
+        if (!dialog) return;
+
+        dialog.addEventListener('click', (event) => {
+            const rect = dialog.getBoundingClientRect();
+            const isInDialog = (
+                rect.top <= event.clientY &&
+                event.clientY <= rect.top + rect.height &&
+                rect.left <= event.clientX &&
+                event.clientX <= rect.left + rect.width
+            );
+
+            if (!isInDialog) {
+                dialog.close();
+            }
+        });
+    }
+
+    enableClickOutsideClose(dialog);
+    enableClickOutsideClose(modal);
 
 
-    document.body.append(header, main, dialog);
+
+    document.body.append(header, main, dialog, modal);
 });
 
 
