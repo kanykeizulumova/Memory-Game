@@ -83,7 +83,7 @@ const state = {
     score: 0,
     timer: 0,
     timerId: null,
-    status: 'idle'      // 'idle' | 'playing' | 'paused' | 'won'
+    status: 'idle'      // 'idle' | 'playing' | 'won'
 };
 
 
@@ -117,9 +117,69 @@ document.addEventListener('DOMContentLoaded', () => {
     leaderboardHeaderBtn.className = 'leader-board'
     leaderboardHeaderBtn.textContent = 'Таблица лидеров';
     leaderboardHeaderBtn.addEventListener('click', () => {
+        renderLocalStorageData();
         leaderboardDialog.showModal();
     });
 
+    function renderLocalStorageData() {
+        let savedData = localStorage.getItem('memoryGameScores');
+        const container = document.getElementById('leaderboardContainer');
+        if (savedData) {
+            try {
+                const data = JSON.parse(savedData);
+
+                container.textContent = '';
+                const table = document.createElement('table');
+                table.className = 'leaderboard-table';
+                const thead = document.createElement('thead');
+                const headerTr = document.createElement('tr');
+                const movesNm = document.createElement('th');
+                movesNm.textContent = 'Место';
+
+                const movesTh = document.createElement('th');
+                movesTh.textContent = 'Результат';
+
+                const dateTh = document.createElement('th');
+                dateTh.textContent = 'Дата игры';
+                headerTr.appendChild(movesNm);
+                headerTr.appendChild(movesTh);
+                headerTr.appendChild(dateTh);
+                thead.appendChild(headerTr);
+                table.appendChild(thead);
+
+                const tbody = document.createElement('tbody');
+
+                data.forEach((item, index) => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'leaderboard-item';
+
+                    const numberTd = document.createElement('td');
+                    numberTd.textContent = index + 1;
+
+                    const movesTd = document.createElement('td');
+                    movesTd.textContent = `Ходов: ${item.moves}`;
+
+                    const dateTd = document.createElement('td');
+                    dateTd.textContent = item.date;
+
+                    tr.appendChild(numberTd);
+                    tr.appendChild(movesTd);
+                    tr.appendChild(dateTd);
+                    tbody.appendChild(tr);
+                });
+
+                table.appendChild(tbody);
+                container.appendChild(table);
+
+            } catch (error) {
+                console.error("Ошибка чтения или парсинга данных:", error);
+            }
+        } else if (savedData === null) {
+            container.textContent = 'Нет данных для отображения.';
+        } else {
+            container.textContent = 'Нет данных для отображения.';
+        }
+    }
     headerActions.append(newGameHeaderBtn, leaderboardHeaderBtn);
     header.append(brandLink, headerActions);
 
@@ -441,6 +501,29 @@ function checkGameWin() {
 
     if (matchedCount === totalPairs) {
         state.status = 'won';
+        const saved = localStorage.getItem('memoryGameScores');
+        const scores = saved ? JSON.parse(saved) : [];
+
+        const now = new Date();
+        const day = String(now.getDate()).padStart(2, '0');
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const year = now.getFullYear();
+        const formattedDate = `${day}.${month}.${year}`;
+        const newEntry = {
+            moves: state.moves,
+            date: formattedDate,
+            timestamp: Date.now()
+        };
+
+        scores.push(newEntry);
+        scores.sort((a, b) => {
+            if (a.moves !== b.moves) {
+                return a.moves - b.moves;
+            }
+            return a.timestamp - b.timestamp;
+        });
+        const top10 = scores.slice(0, 10);
+        localStorage.setItem('memoryGameScores', JSON.stringify(top10));
         console.log('You won the game!');
         setTimeout(() => {
             dialog.showModal();
