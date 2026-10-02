@@ -221,7 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const container = document.createElement('div');
     container.id = 'leaderboardContainer';
-    container.innerHTML = '';
+    container.textContent = ''
 
     const closeBtn = document.createElement('button');
     closeBtn.className = 'close-modal-btn';
