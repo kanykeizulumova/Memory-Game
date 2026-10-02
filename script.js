@@ -77,6 +77,7 @@ const state = {
     theme: 'lotr',
     cards: [],
     flippedCards: [],
+    flipTimeoutId: null,
     isLocked: false,
     moves: 0,
     score: 0,
@@ -316,11 +317,21 @@ function renderBoard(gameBoard) {
 }
 
 function startNewGame(gameBoard) {
+    if (state.flipTimeoutId) {
+        clearTimeout(state.flipTimeoutId);
+        state.flipTimeoutId = null;
+    }
+    if (state.timerId) {
+        clearInterval(state.timerId);
+        state.timerId = null;
+    }
+
     state.cards = createDeck(library[state.theme], 8);
     state.flippedCards = [];
     state.isLocked = false;
     state.moves = 0;
     state.status = 'playing';
+    state.timer = 0;
 
     renderBoard(gameBoard);
 }
@@ -403,8 +414,7 @@ function checkPairMatch() {
     } else {
 
         state.isLocked = true;
-
-        setTimeout(() => {
+        state.flipTimeoutId = setTimeout(() => {
             card1.isFlipped = false;
             card2.isFlipped = false;
 
@@ -419,6 +429,7 @@ function checkPairMatch() {
 
             state.flippedCards = [];
             state.isLocked = false;
+            state.flipTimeoutId = null;
         }, 1000);
     }
 }
