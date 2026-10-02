@@ -198,7 +198,8 @@ document.addEventListener('DOMContentLoaded', () => {
     modalNewGameBtn.textContent = 'Новая игра';
     modalNewGameBtn.addEventListener('click', () => {
         dialog.close();
-        document.getElementById('moves-count').textContent = '0';
+        document.getElementById('moves-count').textContent = ' 0';
+        document.getElementById('pairs-count').textContent = '0 из 8';
         startNewGame(gameBoard);
     });
 
@@ -346,7 +347,7 @@ function shuffle(array) {
 function handleCardClick(cardId) {
     const card = state.cards.find(c => c.uniqueId === cardId);
 
-    if (state.isLocked || !card || card.isFlipped || card.isMatched) {
+    if (state.status === 'won' || state.isLocked || !card || card.isFlipped || card.isMatched) {
         return;
     }
     card.isFlipped = true;
