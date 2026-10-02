@@ -105,6 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
     newGameHeaderBtn.addEventListener('click', () => {
         dialog.close();
         document.getElementById('moves-count').textContent = ' 0';
+        document.getElementById('pairs-count').textContent = '0 из 8';
         startNewGame(gameBoard);
     });
 
@@ -202,7 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
     modalCloseBtn.type = 'button';
     modalCloseBtn.id = 'modal-close-btn';
     modalCloseBtn.textContent = 'Закрыть';
-    modalNewGameBtn.addEventListener('click', () => {
+    modalCloseBtn.addEventListener('click', () => {
         dialog.close();
     });
 
